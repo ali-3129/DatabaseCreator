@@ -18,7 +18,8 @@ namespace eval ::core::request {
         set try_rund 1
         while {$try_rund <= 3} {
 
-            if {[catch {::core::request::mandant_request $url
+            if {[catch {
+                set value [::core::request::mandant_request $url]
                 
             } err]} {
                 puts $err
@@ -27,6 +28,7 @@ namespace eval ::core::request {
                 incr try_rund
                 
             } else {
+                ::core::request::text_cleaner [::http::data $value]
                 break
             }
         }
@@ -36,16 +38,102 @@ namespace eval ::core::request {
     proc mandant_request {url} {
         puts $url
         if {[catch { set value [::http::geturl $url]
-            ::core::request::text_cleaner [::http::data $value]
+
         } err]} {
             error "http error: $err"
         }
+        return $value
     }
 
     proc text_cleaner {value} {
-        set data [json get $value data]
-        puts $data
-        #puts $value
+        set headTemplate [dict create \
+            objectID "" \
+            objectType "" \
+            uniqueID "" \
+            externalReferenceID "" \
+            docType "" \
+            createdDate "" \
+            printedDate "" \
+            transState "" \
+            totalValue "" \
+            shippingCondition "" \
+            cashDiscount ""
+        ]
+
+        set positionTemplate [dict create \
+            objectID "" \
+            objectType "" \
+            positionNo "" \
+            itemID "" \
+            itemText "" \
+            addItemText "" \
+            extOrderNumber "" \
+            eanCode "" \
+            itemDescription "" \
+            quantity "" \
+            unit "" \
+            pricePerUnit "" \
+            currency "" \
+            net "" \
+            total "" \
+            purchasePricePointer ""
+        ]
+
+        set scheduleTemplate [dict create \
+            objectID "" \
+            desiredDeliveryDate "" \
+            desiredDeliveryWeek "" \
+            desiredQuantity ""
+        ]
+
+        set records {}
+        set dataLen [json length $value data]
+
+        for {set i 0} {$i < $dataLen} {incr i} {
+            set headDict $headTemplate
+
+            dict for {key _} $headTemplate {
+                dict set headDict $key \
+                    [json get -default "" $value data $i head $key]
+            }
+
+            set positions {}
+            set posLen [json length $value data $i positions]
+
+            for {set p 0} {$p < $posLen} {incr p} {
+                set posDict $positionTemplate
+
+                dict for {key _} $positionTemplate {
+                    dict set posDict $key \
+                        [json get -default "" $value data $i positions $p $key]
+                }
+
+                set schedules {}
+                set schedLen [json length $value data $i positions $p deliverySchedules]
+
+                for {set s 0} {$s < $schedLen} {incr s} {
+                    set schedDict $scheduleTemplate
+
+                    dict for {key _} $scheduleTemplate {
+                        dict set schedDict $key \
+                            [json get -default "" $value data $i positions $p deliverySchedules $s $key]
+                    }
+
+                    lappend schedules $schedDict
+                }
+
+                dict set posDict deliverySchedules $schedules
+                lappend positions $posDict
+            }
+
+            set record [dict create \
+                head $headDict \
+                positions $positions \
+            ]
+
+            lappend records $record
+        }
+        return $records
     }
 }
 puts [::core::file::file_reader $::infrastructure::config_url "request" "url"]
