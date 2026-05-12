@@ -2,39 +2,18 @@ package require OZ
 package require rl_json
 set doc {"name":"Ali","age":30,"active":true}
 set json dict{}
-source C://Tcl/Projekt/datenimport/app/infrastructure/common.tcl
+set ::APP_ROOT [file normalize [file join [file dirname [info script]] ".."]]
+
+source [file join $::APP_ROOT "infrastructure" "common.tcl"]
+
 package require OZ::file::IniFile
 package require OZ::file::ini_compat
 
-#set f [OZ::file::IniFile C:\Tcl\Projekt\datenimport\config.ini]
 
-# set f [IniFile::Open $::infrastructure::mandant_url]
-
-# puts [ReadIni $f]
-
-#puts [info object methods $f -all]
-#set h [$f GetSection ProAlphaEarningsDriver]
-
-#puts [info object methods $h -all]
-#puts [$f Get wsExportClientList]
-# set f [open $::infrastructure::mandant_url "r"]
-# while {[gets $f line] >= 0} {
-#     if {[regexp {^wsReleaseClientList} $line]} {
-#         puts "FOUND: $line"
-#         break
-#     }
-# }
-
-# close $f
-# regexp {^\s*wsReleaseClientList\s*=\s*(.*)$} $line -> value
-
-# set numbers [split $value]
-# puts $numbers
 
 namespace eval  ::core::file {
     proc file_reader {file_path branche goal} {
         
-
     if {[catch {
             set f [IniFile::Open $file_path]
             set h [$f GetSection $branche]
@@ -83,6 +62,6 @@ namespace eval  ::core::file {
 }
 #set f [open $::infrastructure::mandant_url "r"]
 
-puts [::core::file::file_reader $::infrastructure::config_url "request" "url"]
-puts [::core::file::mandant_reader $::infrastructure::config_url "mandant" "m_ids"]
+# puts [::core::file::file_reader $::infrastructure::config_url "request" "url"]
+# puts [::core::file::mandant_reader $::infrastructure::config_url "mandant" "m_ids"]'
 
