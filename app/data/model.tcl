@@ -7,9 +7,9 @@ namespace eval ::database {
         } err ]} {
             puts $err
         }
-
         return $db
     }
+    
     
     proc write {db records} {
         
@@ -18,11 +18,17 @@ namespace eval ::database {
             foreach record $records {
                 set key [dict get $record uniqueID]
                 set value [dict get $record hash]
-                if {[$db exists $value] == 1} {
-                    continue
-                } else {
+                if {[$db exists $key]} {
+                set oldHash [$db get $key]
+
+                if {$oldHash ne $value} {
                     $db set $key $value
+                    puts "Changed: $key"
                 }
+            } else {
+                $db set $key $value
+                puts "New: $key"
+            }
                 
             }
            

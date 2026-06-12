@@ -1,5 +1,4 @@
-# source C://Tcl/Projekt/datenimport/app/core/datenimport.tcl
-# source C://Tcl/Projekt/datenimport/app/infrastructure/common.tcl
+
 package require rl_json
 package require http
 set ::APP_ROOT [file normalize [file join [file dirname [info script]] ".."]]
@@ -12,7 +11,6 @@ if {[llength [info commands json]] == 0} {namespace import ::rl_json::json}
 namespace eval ::core::request {
     # Namespace body
     proc url_append {url mandant_id} {
-        #set url [::core::file::file_reader $::infrastructure::config_url "request" "url"]
         set mandant_id [split $mandant_id]
         append url $mandant_id
         return $url
@@ -33,7 +31,6 @@ namespace eval ::core::request {
                 
             } else {
                 return $value
-                # ::core::request::text_cleaner [::http::data $value]
                 break
             }
         }
@@ -52,7 +49,5 @@ namespace eval ::core::request {
 
 
 }
-# puts [::core::file::file_reader $::infrastructure::config_url "request" "url"]
-# puts [::core::file::mandant_reader $::infrastructure::config_url "mandant" "m_ids"]
-# ::core::request::url_append 100
+
 

@@ -44,24 +44,16 @@ namespace eval  ::core::file {
 
     proc mandant_reader {file_path branche goal} {
         try {
-            
             set mandant_number [::core::file::file_reader $file_path $branche $goal]
-
             if {$mandant_number eq ""} {
-
-                return [::core::file::mandant_finder $::infrastructure::mandant_url]
+                set mandant_path [::core::file::file_reader $::infrastructure::config_url "path" "mandant_path"]
+                return [::core::file::mandant_finder $mandant_path]
             } else {
                 return $mandant_number
             }
         }
         
-        #::core::ini_reader $::infrastructure::config_url "request" "url"
     }
 
 
 }
-#set f [open $::infrastructure::mandant_url "r"]
-
-# puts [::core::file::file_reader $::infrastructure::config_url "request" "url"]
-# puts [::core::file::mandant_reader $::infrastructure::config_url "mandant" "m_ids"]'
-
