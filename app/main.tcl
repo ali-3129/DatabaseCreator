@@ -8,7 +8,7 @@ source [file join $::APP_ROOT "core" "cleaner.tcl"]
 
 
 
-proc run {url} {
+proc run {url uniqueIdPath uniqueIdSuffix} {
     if {[catch {
         #set url [::core::file::file_reader $::infrastructure::config_url "request" "bestelldaten_url"]
         set mids [::core::file::mandant_reader $::infrastructure::config_url "mandant" "m_ids"]
@@ -27,7 +27,7 @@ proc run {url} {
             puts $end_path
             if {[ catch { set value [::core::request::retry $url_with_id] 
                         set data [::http::data $value]
-                        set records [::core::cleaner::extract_hash_records $data]
+                        set records [::core::cleaner::extract_hash_records $data $uniqueIdPath $uniqueIdSuffix]
                         ::database::write $db $records
                         $db close
             } err]} {
@@ -45,35 +45,43 @@ proc run {url} {
 
 proc main {} {
     set modus [::core::file::file_reader $::infrastructure::config_url "einstellung" "modus"]
+    set uniqueIdSuffix ""
     switch $modus {
         WE {
                 set url [::core::file::file_reader $::infrastructure::config_url "request" "we_url"]
                 puts "$url"
-                run $url
+                set uniqueIdPath {uniqueID}
+                
+                run $url $uniqueIdPath $uniqueIdSuffix
             }
 
             default {
                 set url [::core::file::file_reader $::infrastructure::config_url "request" "bestelldaten_url"]
                 puts $url
-                run $url
+                set uniqueIdPath {head uniqueID}
+                set uniqueIdSuffix "|EB"
+                run $url $uniqueIdPath $uniqueIdSuffix
             }
         }
 }
 
-main
+#main
 #run
 proc test_value {} {
-    set f [open "C://Users/asghari/Desktop/web_call.txt" r ]
+    set f [open "C://Users/asghari/Desktop/web_call_we.txt" r ]
     set context [read $f]
     return $context
 }
 
 proc test {} {
     set value [test_value]
-    set records [::core::cleaner::extract_hash_records $value]
-    set db [::database::openDB $::infrastructure::database_path_test]
-    ::database::write $db $records
-    $db close
+    set uniqueIdPath {uniqueID}
+    set uniqueIdSuffix "|EB"
+
+    set records [::core::cleaner::extract_hash_records $value $uniqueIdPath $uniqueIdSuffix]
+    #set db [::database::openDB $::infrastructure::database_path_test]
+    #::database::write $db $records
+    #$db close
 }
 
-#test
+test

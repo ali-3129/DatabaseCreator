@@ -1,13 +1,19 @@
 package require rl_json
 
 namespace eval ::core::cleaner {
-    proc extract_hash_records {response} {
+    proc extract_hash_records {response uniqueIdPath uniqueIdSuffix} {
         set records {}
-        set dataLen [json length $response data]
 
+        set dataLen [json length $response data]
+        puts $dataLen
         for {set i 0} {$i < $dataLen} {incr i} {
-            set uniqueID [json get -default "" $response data $i head uniqueID]
+            set recordBlock [json extract $response data $i]
+            set uniqueID [json get -default "" $recordBlock {*}$uniqueIdPath]
             puts $uniqueID
+            append uniqueID $uniqueIdSuffix
+            #set uniqueID [json get -default "" $response data $i head uniqueID]
+            #set uniqueID [json get -default "" $response data $i uniqueID]
+            #puts $uniqueID
             set block    [json extract $response data $i]
             set hash     [sha2::sha256 -hex $block]
 
@@ -16,7 +22,7 @@ namespace eval ::core::cleaner {
                 hash $hash \
             ]
         }
-
+        puts $records
         return $records
     }
 
