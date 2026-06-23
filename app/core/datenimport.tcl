@@ -1,11 +1,11 @@
 package require OZ
 package require rl_json
-set doc {"name":"Ali","age":30,"active":true}
 set json dict{}
 set ::APP_ROOT [file normalize [file join [file dirname [info script]] ".."]]
 
 source [file join $::APP_ROOT "infrastructure" "common.tcl"]
 
+package require OZ::log::Protokoll
 package require OZ::file::IniFile
 package require OZ::file::ini_compat
 
@@ -43,7 +43,6 @@ namespace eval  ::core::file {
     }
 
     proc mandant_reader {file_path branche goal} {
-        try {
             set mandant_number [::core::file::file_reader $file_path $branche $goal]
             if {$mandant_number eq ""} {
                 set mandant_path [::core::file::file_reader $::infrastructure::config_url "path" "mandant_path"]
@@ -51,9 +50,7 @@ namespace eval  ::core::file {
             } else {
                 return $mandant_number
             }
-        }
         
     }
-
 
 }

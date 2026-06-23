@@ -1,40 +1,39 @@
 namespace eval ::database {
     # Namespace body
     proc openDB {dbpath} {
-        if {[catch {
             ::KeyDBInit $dbpath
             set db [::KeyDBOpen]
-        } err ]} {
-            puts $err
-        }
+
         return $db
     }
     
     
     proc write {db records} {
         
-        if {[catch {
+        set change_counter 0
+        set add_counter 0
             
-            foreach record $records {
-                set key [dict get $record uniqueID]
-                set value [dict get $record hash]
-                if {[$db exists $key]} {
-                set oldHash [$db get $key]
+        foreach record $records {
+            
+            set key [dict get $record uniqueID]
+            set value [dict get $record hash]
+            if {[$db exists $key]} {
+            set oldHash [$db get $key]
 
-                if {$oldHash ne $value} {
-                    $db set $key $value
-                    puts "Changed: $key"
-                }
-            } else {
+            if {$oldHash ne $value} {
                 $db set $key $value
-                puts "New: $key"
+                incr change_counter
+                puts "Changed: $key"
             }
-                
-            }
-           
-        } err ]} {
-            puts $err
+        } else {
+            $db set $key $value
+            puts "New: $key"
+            incr add_counter 
         }
+            
+        }
+        return "changed: $change_counter   new added : $add_counter"
+
     }
 }
 

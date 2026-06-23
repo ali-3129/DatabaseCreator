@@ -34,16 +34,12 @@ namespace eval ::core::request {
                 break
             }
         }
-        
+        error "Request failed after retries"
     }
 
     proc mandant_request {url} {
         puts $url
-        if {[catch { set value [::http::geturl $url]
-
-        } err]} {
-            error "http error: $err"
-        }
+        set value [::http::geturl $url]
         return $value
     }
 
