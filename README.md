@@ -1,240 +1,132 @@
-# Developed as an internal automation tool to streamline customer software upgrades and automate the recovery of open business data into newly created intermediate databases.
+# Open Data Recovery Tool
 
+A Tcl-based internal tool for restoring open business records after installing a new software version at a customer site.
 
-A Tcl-based automation tool developed to restore open business data into newly created intermediate databases after software upgrades.
+## Overview
 
-Overview
+During a software installation, the existing intermediate databases were removed and recreated.
 
-During software upgrades at customer sites, the existing intermediate database was recreated as part of the installation process. As a result, all pending business records stored in that database were removed.
+Open business records were still available through the company’s internal Web Service, but restoring them manually was time-consuming and error-prone.
 
-Although the intermediate database was recreated, the open business data was still available through the company's internal Web Service. Before this tool was developed, these records had to be restored manually, which was time-consuming and prone to human error.
+This tool automates the recovery process by retrieving open records, generating hashed business keys, transforming the data, and inserting each record into the correct Mandant-specific database.
 
-This project automates the entire recovery process by retrieving open records from the Web Service, generating deterministic keys, transforming the data, and inserting it into the appropriate intermediate database.
+## Workflow
 
-The tool was developed internally for use within the company to simplify customer software upgrades and reduce manual effort.
+```mermaid
+flowchart TD
+    A[Install New Software Version] --> B[Intermediate Databases Are Recreated]
+    B --> C[Load Mandant Configuration]
+    C --> D[Retrieve Open Records from Web Service]
+    D --> E[Build Model-Specific Composite Key]
+    E --> F[Hash Composite Key]
+    F --> G[Transform Record]
+    G --> H[Insert into Mandant Database]
+    H --> I[Write Result to Protocol]
+```
 
-Problem Statement
-Before
+## Features
 
-Software Upgrade
-        │
-        ▼
-Intermediate Database Recreated
-        │
-        ▼
-Open business data no longer exists
-        │
-        ▼
-Employee manually restores records
-        │
-        ▼
-Long processing time
-High risk of mistakes
-After
-Software Upgrade
-        │
-        ▼
-Run Open Data Migration Tool
-        │
-        ▼
-Retrieve open records
-        │
-        ▼
-Generate unique keys
-        │
-        ▼
-Insert records automatically
-        │
-        ▼
-Intermediate database is restored
-Features
-Automatic retrieval of open business records from the internal Web Service
-Automatic migration into newly created intermediate databases
-Support for multiple business data models
-Mandant-specific database processing
-Deterministic composite key generation
-Hash-based unique identifiers
-Centralized logging
-Structured error handling
-Configurable processing
-Reduced migration time and manual work
-Supported Data Models
+* Retrieves open records from the internal Web Service
+* Supports multiple Mandants and business data models
+* Writes each Mandant’s data to its dedicated database
+* Generates deterministic composite keys
+* Hashes keys before database insertion
+* Logs successful operations and processing errors
+* Continues with other Mandants when one Mandant fails
+* Reduces manual work during software installations
 
-The tool supports multiple business object types.
+## Supported Data Models
 
-Examples include:
+Examples of supported business records include:
 
-Goods Receipt
-Order Confirmation
+* Goods Receipt
+* Order Confirmation
 
-Each data model defines its own strategy for generating a unique composite key.
+Each model has its own key-generation strategy.
 
-For example:
+A Goods Receipt key may contain:
 
-Goods Receipt
-Document Number
-+
-Position Number
-Order Confirmation
-Document Number
-+
-Position Number
-+
-Confirmation Type
+```text
+Document Number + Position Number
+```
 
-Some business objects require additional information inside the key to guarantee uniqueness.
+An Order Confirmation key may contain:
 
-The generated composite key is then hashed before being stored in the destination database.
+```text
+Document Number + Position Number + Confirmation Type
+```
 
-Processing Workflow
-Read configuration
-        │
-        ▼
-Process Mandant
-        │
-        ▼
-Request open records from Web Service
-        │
-        ▼
-Determine data model
-        │
-        ▼
-Generate composite key
-        │
-        ▼
-Hash the key
-        │
-        ▼
-Transform source data
-        │
-        ▼
-Insert into Mandant database
-        │
-        ▼
-Write processing result to log
-Architecture
-                Configuration
-                      │
-                      ▼
-              Main Tcl Application
-                      │
-      ┌───────────────┼────────────────┐
-      │               │                │
-      ▼               ▼                ▼
- Web Service      Data Parser      Logger
-      │
-      ▼
-Key Generator
-      │
-      ▼
-Hash Generator
-      │
-      ▼
-Database Writer
-Key Generation
+The confirmation type is required because different confirmation records may belong to the same document and position.
 
-One of the most important parts of the project is deterministic key generation.
+## Key Generation
 
-Each business object is converted into a composite key based on its identifying fields.
+```mermaid
+flowchart LR
+    A[Business Fields] --> B[Composite Key]
+    B --> C[Hash Function]
+    C --> D[Database Key]
+```
 
-The composite key is then hashed before insertion into the database.
+The identifying fields are selected according to the data model. The resulting composite key is then hashed and used as the database identifier.
 
-This approach guarantees that identical business objects always generate the same identifier while different business objects produce different keys.
+## Mandant Processing
 
-Some business models require additional fields inside the key.
+Each Mandant is assigned to a specific data model and a dedicated intermediate database.
 
-For example, Order Confirmation records include the confirmation type because multiple confirmations may exist for the same document and position.
+```mermaid
+flowchart LR
+    A[Mandant A] --> D[(Database A)]
+    B[Mandant B] --> E[(Database B)]
+    C[Mandant C] --> F[(Database C)]
+```
 
-Mandant Processing
+Mandants are processed independently. An error in one Mandant is logged without stopping the remaining Mandants.
 
-Each Mandant is responsible for a specific business data model.
+## Error Handling and Logging
 
-The tool processes every Mandant independently and writes the transformed records into the intermediate database assigned to that Mandant.
+The application records information such as:
 
-This design keeps the processing isolated and prevents data from being inserted into the wrong database.
+* Application start and end
+* Current Mandant
+* Number of retrieved records
+* Number of inserted records
+* Web Service errors
+* Database errors
+* Unexpected failures
 
-Error Handling
+Fatal errors are handled at the application entry point, while Mandant-specific errors are handled inside the Mandant processing boundary.
 
-The project follows a centralized error handling strategy.
+## Authentication
 
-Errors occurring while processing one Mandant do not stop the processing of the remaining Mandants.
-Lower-level procedures report errors to higher layers instead of handling them unnecessarily.
-Processing errors are logged together with contextual information.
-Fatal application errors are handled at the application's entry point.
+The tool does not implement application-level authentication.
 
-This design keeps the migration process robust while maximizing the number of successfully restored records.
+It runs inside the company environment on systems that are already authorized to access the internal Web Service.
 
-Logging
+## Requirements
 
-The application produces detailed processing logs.
+* Tcl
+* Access to the internal Web Service
+* Access to the Mandant-specific databases
+* Required Tcl packages
+* Permission to write the protocol file
 
-Typical log entries include:
+## Usage
 
-Start and end of execution
-Processed Mandant
-Current business object
-Number of retrieved records
-Number of inserted records
-Processing errors
-Unexpected failures
+```bash
+tclsh main.tcl
+```
 
-The centralized logging mechanism simplifies troubleshooting and post-migration verification.
+After execution, review the generated protocol and verify the restored records in the corresponding intermediate databases.
 
-Configuration
+## Benefits
 
-Application behavior is configured through a dedicated configuration file.
+* Faster customer software installations
+* Less manual data entry
+* Lower risk of incorrect or missing records
+* Consistent key generation
+* Isolated processing for each Mandant
+* Easier troubleshooting through protocol logs
 
-Typical configuration values include:
+## Internal Project Notice
 
-Web Service endpoint
-Database connection information
-Mandant definitions
-Logging location
-Processing options
-Runtime Environment
-
-The tool runs entirely inside the company's internal infrastructure.
-
-It does not implement application-level authentication because the execution environment is already authorized to communicate with the internal Web Service.
-
-Project Structure
-project/
-│
-├── main.tcl
-├── config/
-├── database/
-├── parser/
-├── hashing/
-├── logging/
-├── webservice/
-├── migration/
-└── utils/
-
-Folder names may differ depending on the project version.
-
-Benefits
-
-Compared to the previous manual workflow, the tool provides:
-
-Faster customer upgrades
-Elimination of repetitive manual work
-Consistent key generation
-Reliable restoration of open business data
-Lower risk of human error
-Easier maintenance through modular components
-Technologies
-Tcl
-Internal Company Web Service
-SQL Database
-Hash-based key generation
-Configuration-driven processing
-Future Improvements
-
-Possible future enhancements include:
-
-Parallel processing for multiple Mandants
-Migration reports
-Progress monitoring
-Performance metrics
-Automatic retry for temporary Web Service failures
-Additional business object support
+This project was developed for internal company use. Internal endpoints, customer data, database credentials, and confidential configuration values are not included.
